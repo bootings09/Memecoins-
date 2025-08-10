@@ -1,12 +1,12 @@
-import logging
-import requests
+import os
 import time
+import logging
 from telegram import Bot
 from telegram.error import TelegramError
 
-# YOUR TELEGRAM BOT TOKEN AND USER ID
-TELEGRAM_TOKEN = '8321001406:AAEbBA0gwPWvGFZlGr_XbjZZ4BGRrpFlbGg'
-USER_ID = 6773748098
+# ✅ Get from environment (more secure)
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+USER_ID = os.getenv('USER_ID')
 
 # Initialize Telegram Bot
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -14,17 +14,12 @@ bot = Bot(token=TELEGRAM_TOKEN)
 logging.basicConfig(level=logging.INFO)
 
 # --- Configurable Parameters ---
-MIN_LIQUIDITY = 30000  # Minimum liquidity in USD
-MIN_VOLUME = 10000     # Minimum volume in USD in last 5 min
+MIN_LIQUIDITY = 30000   # Minimum liquidity in USD
+MIN_VOLUME = 10000      # Minimum volume in USD in last 5 min
 RISK_SCORE_THRESHOLD = 70  # Minimum risk score to send alert
 
-# Dummy API endpoints (replace with real Solana memecoin data sources)
-TRENDING_API = 'https://api.example.com/solana/memecoins/trending'
-TOKEN_INFO_API = 'https://api.example.com/solana/token/info'
-
+# Dummy function to simulate memecoin data (replace with real API later)
 def fetch_trending_memecoins():
-    # For demo, returning dummy data
-    # Replace with real API calls
     return [
         {
             'symbol': 'MOONCAT',
@@ -38,9 +33,21 @@ def fetch_trending_memecoins():
             'buy_signal': True,
             'sell_signal': False
         },
-        # Add more tokens here
+        {
+            'symbol': 'RUGME',
+            'price': 0.000001,
+            'volume_5m': 1200,
+            'liquidity': 500,
+            'market_cap': 10000,
+            'rug_check_passed': False,
+            'honeypot_passed': False,
+            'risk_score': 10,
+            'buy_signal': False,
+            'sell_signal': False
+        }
     ]
 
+# Format and send alert to Telegram
 def send_telegram_message(text):
     try:
         bot.send_message(chat_id=USER_ID, text=text, parse_mode='Markdown')
@@ -49,7 +56,7 @@ def send_telegram_message(text):
 
 def format_signal_message(token):
     signal = "BUY 🚀" if token['buy_signal'] else "SELL 🔻" if token['sell_signal'] else "HOLD ⏸️"
-    message = f"""
+    return f"""
 🔥 *{signal} SIGNAL*: {token['symbol']}
 
 💰 Price: ${token['price']:.8f}
@@ -62,21 +69,24 @@ def format_signal_message(token):
 
 ➡️ Suggested Action: *{signal}*
 """
-    return message
 
 def main():
-    logging.info("Starting Solana Memecoin Bot...")
+    logging.info("🚀 Solana Memecoin Bot Started")
     while True:
         try:
             tokens = fetch_trending_memecoins()
             for token in tokens:
-                if token['risk_score'] >= RISK_SCORE_THRESHOLD and token['rug_check_passed'] and token['honeypot_passed']:
+                if (
+                    token['risk_score'] >= RISK_SCORE_THRESHOLD and
+                    token['rug_check_passed'] and
+                    token['honeypot_passed']
+                ):
                     msg = format_signal_message(token)
                     send_telegram_message(msg)
-                    logging.info(f"Sent alert for {token['symbol']}")
-            time.sleep(300)  # Wait 5 minutes before checking again
+                    logging.info(f"✅ Alert sent for {token['symbol']}")
+            time.sleep(300)  # Wait 5 minutes before next scan
         except Exception as e:
-            logging.error(f"Error in main loop: {e}")
+            logging.error(f"⚠️ Error: {e}")
             time.sleep(60)
 
 if __name__ == '__main__':
